@@ -219,7 +219,7 @@ class Maxwell1D(SpatialDiscretization):
             fields = self.buildFields()
             node = i % Np
             elem = int(np.floor(i / Np)) % K
-            if (i%2=1):
+            if (i%2==1):
                 fields['E'][node, elem] = 1.0
             else:
                 fields['H'][node, elem] = 1.0

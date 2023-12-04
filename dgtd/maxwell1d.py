@@ -209,6 +209,28 @@ class Maxwell1D(SpatialDiscretization):
             A[:,i] = q0[:,0]
 
         return A
+    
+    def buildEvolutionOperatorReArranged(self):
+        Np = self.number_of_nodes_per_element()
+        K = self.mesh.number_of_elements()
+        N = 2 * Np * K
+        Aarranged = np.zeros((N,N))
+        for i in range(N):
+            fields = self.buildFields()
+            node = i % Np
+            elem = int(np.floor(i / Np)) % K
+            if (i%2=1):
+                fields['E'][node, elem] = 1.0
+            else:
+                fields['H'][node, elem] = 1.0
+            fieldsRHS = self.computeRHS(fields)
+            q0 = np.vstack([
+                fieldsRHS['E'].reshape(Np*K,1, order='F'), 
+                fieldsRHS['H'].reshape(Np*K,1, order='F')
+            ])
+            Aarranged[:,i] = q0[:,0]
+
+        return Aarranged
 
     def getEnergy(self, field):
         '''

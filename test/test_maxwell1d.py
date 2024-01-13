@@ -19,9 +19,9 @@ def test_buildEvolutionOperator():
     sp = Maxwell1D(1, m, "Centered")
     A = sp.buildEvolutionOperator()
 
-    # import matplotlib.pyplot as plt
-    # plt.spy(A)
-    # plt.show()
+    import matplotlib.pyplot as plt
+    plt.spy(A)
+    plt.show()
 
 def test_buildEvolutionOperatorReArranged():
     m = Mesh1D(0, 1, 10)

@@ -214,12 +214,15 @@ class Maxwell1D(SpatialDiscretization):
         Np = self.number_of_nodes_per_element()
         K = self.mesh.number_of_elements()
         N = 2 * Np * K
-        Aarranged = np.zeros((N,N))
+        Caux = np.zeros((2*K,2*K))
+        A = np.zeros((N,N))
+        I = np.eye(Np)
+        q0aux = np.zeros((N,1))
         for i in range(N):
             fields = self.buildFields()
             node = i % Np
             elem = int(np.floor(i / Np)) % K
-            if (i%2==1):
+            if i < N/2:
                 fields['E'][node, elem] = 1.0
             else:
                 fields['H'][node, elem] = 1.0
@@ -228,7 +231,12 @@ class Maxwell1D(SpatialDiscretization):
                 fieldsRHS['E'].reshape(Np*K,1, order='F'), 
                 fieldsRHS['H'].reshape(Np*K,1, order='F')
             ])
-            Aarranged[:,i] = q0[:,0]
+            A[:,i] = q0[:,0]
+        for m in range(K):
+            Caux[m,2*m]=1
+            Caux[m+K,2*m+1]=1
+        C=np.kron(Caux, I)
+        Aarranged = np.linalg.inv(C).dot(A).dot(C)
 
         return Aarranged
 

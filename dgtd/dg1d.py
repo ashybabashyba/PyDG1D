@@ -38,8 +38,7 @@ def jacobiGL(alpha, beta, n_order):
 
 def jacobi_gauss(alpha, beta, n_order):
 
-    #JacobiGQ(alpha,beta,N) in Hesthaven
-
+    # JacobiGQ(alpha,beta,N) in Hesthaven
     """
     Compute the order n_order Gauss quadrature points, x, 
     and weights, w, associated with the Jacobi 
@@ -162,7 +161,7 @@ def vandermonde(n_order, r):
     res = np.zeros((len(r), n_order+1))
     for j in range(len(r)):
         res[:, j] = np.transpose(jacobi_polynomial(r, 0, 0, j))
-        #res = np.hstack((res, jacobi_polynomial(r, 0, 0, j)))
+        # res = np.hstack((res, jacobi_polynomial(r, 0, 0, j)))
     return res
 
 
@@ -207,10 +206,12 @@ def vandermonde_grad(n_order, r):
 
     return grad_vander
 
+
 def mass_matrix(n_order, r):
     vander = vandermonde(n_order, r)
     mass = np.linalg.inv(vander.dot(vander.transpose()))
     return mass
+
 
 def buildFMask(r):
     fmask_1 = np.where(np.abs(r+1) < 1e-10)[0][0]
@@ -218,6 +219,7 @@ def buildFMask(r):
     fmask = [fmask_1, fmask_2]
 
     return fmask, fmask_1, fmask_2
+
 
 def differentiation_matrix(n_order, r):
     """
@@ -262,7 +264,7 @@ def surface_integral_dg(n_order, r):
            [-2.        ,  8.        ]])
     """
 
-    vander = vandermonde(n_order,r)
+    vander = vandermonde(n_order, r)
 
     n_p = n_order+1
     emat = np.zeros([n_p, n_faces*n_fp])
@@ -420,7 +422,7 @@ def connect(EToV):
     total_faces = n_faces*k_elem
     nv = k_elem+1
     vn = np.arange(0, 2)
-    
+
     sp_ftov = np.zeros([total_faces, nv])
 
     sk = 0
@@ -562,3 +564,47 @@ def node_indices(N):
     for i in range(Np):
         nId[i] = [N-i, i]
     return nId.astype(int)
+
+
+def reorder_array(A, Np, K, ordering):
+    # Assumes that the original array contains all DoF ordered as:
+    # [ E_0, ..., E_{K-1}, H_0, ..., H_{K-1} ]
+    N = A.shape[0]
+    new_order = np.arange(N, dtype=int)
+    if ordering == 'byElements':
+        for i in range(N):
+            node = i % Np
+            elem = int(np.floor(i / Np)) % K
+            if i < N/2:
+                new_order[2*elem*Np+node] = i
+            else:
+                new_order[2*elem*Np+Np+node] = i
+    if ordering == 'interleaved':
+        for i in range(N):
+            node = i % Np
+            elem = int(np.floor(i / Np)) % K
+            if i < N/2:
+                new_order[2*elem*Np+node*2] = i
+            else:
+                new_order[2*elem*Np+node*2+1] = i
+    if (len(A.shape) == 1):
+        A1 = [A[i] for i in new_order]
+    elif (len(A.shape) == 2):
+        A1 = [[A[i][j] for j in new_order] for i in new_order]
+    return np.array(A1)
+
+def splitInBlocks(A, blockSize):
+    nBlocks = tuple (int(dim / blockSize) for dim in A.shape)
+    
+    res = [[None for i in range(nBlocks[0])] for j in range(nBlocks[1])]
+    blockRows = np.split(A, nBlocks[0])    
+    for i in np.arange(nBlocks[0]):
+        blocks = np.split(blockRows[i], nBlocks[1], 1)
+        for j in np.arange(nBlocks[1]):
+            res[i][j] = blocks[j]
+    return res
+
+def assembleBlocks(blocks):
+    rowBlocks = [np.concatenate(blocks[i], 1) for i in range(len(blocks))]
+    res = np.concatenate(rowBlocks, 0)
+    return res

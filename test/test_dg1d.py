@@ -235,3 +235,22 @@ def test_node_indices_N_1_2():
                                  [0,2]]), 
                        dg.node_indices(2))
     
+def test_split_and_assemble_blocks():
+    A = np.random.randn(4,4)
+    
+    blocks = dg.splitInBlocks(A, 2)
+    assembledBlocks = dg.assembleBlocks(blocks)
+    
+    assert len(blocks) == 2
+    assert np.all(A == assembledBlocks)
+
+def test_mass_matrix():
+    # Assumes h = 1.
+    n_order = 2
+    M = dg.mass_matrix(n_order, dg.jacobiGL(0, 0, n_order))
+
+    expected = np.array([[ 4.,  2., -1.],
+                         [ 2., 16.,  2.],
+                         [-1.,  2.,  4.]]) / 15
+    
+    assert np.allclose(M, expected)

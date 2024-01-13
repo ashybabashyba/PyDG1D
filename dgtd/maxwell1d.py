@@ -188,7 +188,7 @@ class Maxwell1D(SpatialDiscretization):
         fields['E'][:,:] = vec[:(vec.size//2)].reshape(Np, K, order='F')
         fields['H'][:,:] = vec[(vec.size//2):].reshape(Np, K, order='F')
 
-    def buildEvolutionOperator(self):
+    def buildEvolutionOperator(self, sorting='EH'):
         Np = self.number_of_nodes_per_element()
         K = self.mesh.number_of_elements()
         N = 2 * Np * K
@@ -207,38 +207,7 @@ class Maxwell1D(SpatialDiscretization):
                 fieldsRHS['H'].reshape(Np*K,1, order='F')
             ])
             A[:,i] = q0[:,0]
-
         return A
-    
-    def buildEvolutionOperatorReArranged(self):
-        Np = self.number_of_nodes_per_element()
-        K = self.mesh.number_of_elements()
-        N = 2 * Np * K
-        Caux = np.zeros((2*K,2*K))
-        A = np.zeros((N,N))
-        I = np.eye(Np)
-        q0aux = np.zeros((N,1))
-        for i in range(N):
-            fields = self.buildFields()
-            node = i % Np
-            elem = int(np.floor(i / Np)) % K
-            if i < N/2:
-                fields['E'][node, elem] = 1.0
-            else:
-                fields['H'][node, elem] = 1.0
-            fieldsRHS = self.computeRHS(fields)
-            q0 = np.vstack([
-                fieldsRHS['E'].reshape(Np*K,1, order='F'), 
-                fieldsRHS['H'].reshape(Np*K,1, order='F')
-            ])
-            A[:,i] = q0[:,0]
-        for m in range(K):
-            Caux[m,2*m]=1
-            Caux[m+K,2*m+1]=1
-        C=np.kron(Caux, I)
-        Aarranged = np.linalg.inv(C).dot(A).dot(C)
-
-        return Aarranged
 
     def getEnergy(self, field):
         '''
